@@ -26,11 +26,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     // stores if file is reading in little endian or not
     private boolean littleEndian;
     // the check byte stream used if a portion of the file is needed
-    private List<Byte> checkByteStream;
+    private List<Byte> checkByteStreamList;
     // add bytes to check byte stream if true
     private boolean buildingCheckByteStream;
     // stores bytes to convert
-    private byte[] convertBytes;
+    private byte[] ioBytes;
     // the extra bits that can't yet be written
     private byte extraBits;
     // count of extra bits
@@ -41,6 +41,10 @@ public class RandomReaderWriter implements IReadable, IWritable {
     private byte leadingBitsToWrite;
     // the bit offset over the byte mark
     private byte bitOffset;
+    // byte buffer for primitive data types
+    private byte[] bufferArray;
+    // buffer object
+    ByteBuffer buffer;
 
     /**
      * The 2-args constructor used to write a file with a file name string.
@@ -54,6 +58,8 @@ public class RandomReaderWriter implements IReadable, IWritable {
         raf = new RandomAccessFile(fileName, "rw");
         this.littleEndian = littleEndian;
         this.fileName = fileName;
+        bufferArray = new byte[8];
+        buffer = ByteBuffer.wrap(bufferArray);
     }
 
     /**
@@ -87,6 +93,14 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public long getFilePosition() throws IOException {
         return raf.getFilePointer();
     }
+    
+    public List<Byte> getCheckByteStreamList() {
+        return checkByteStreamList;
+    }
+
+    public boolean isBuildingCheckByteStream() {
+        return buildingCheckByteStream;
+    }
 
     /**
      * Sets endianess of file.
@@ -119,7 +133,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
     @Override
     public void buildCheckByteStream() {
         buildingCheckByteStream = true;
-        checkByteStream = new LinkedList<>();
+        checkByteStreamList = new LinkedList<>();
     }
 
     /**
@@ -131,11 +145,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public byte[] getCheckByteStream() {
 
         // byte arrary
-        byte[] returnByteStream = new byte[checkByteStream.size()];
+        byte[] returnByteStream = new byte[checkByteStreamList.size()];
 
         // build loop
         for (int i = 0; i < returnByteStream.length; i++) {
-            returnByteStream[i] = checkByteStream.get(i);
+            returnByteStream[i] = checkByteStreamList.get(i);
         }
 
         return returnByteStream;
@@ -146,7 +160,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void resetCheckByteStream() {
-        checkByteStream = new LinkedList<>();
+        checkByteStreamList = new LinkedList<>();
     }
 
     /**
@@ -166,19 +180,9 @@ public class RandomReaderWriter implements IReadable, IWritable {
     @Override
     public void writeByteString(String outputString) throws IOException {
 
-        if (leadingBitsToWrite != 0) {
-            int stringLength = outputString.length();
-            for (int i = 0; i < stringLength; i++) {
-                writeByte((byte) outputString.charAt(i));
-            }
-        } else {
-            raf.writeBytes(outputString);
-            if (buildingCheckByteStream && checkByteStream != null) {
-                int stringLength = outputString.length();
-                for (int i = 0; i < stringLength; i++) {
-                    checkByteStream.add((byte) outputString.charAt(i));
-                }
-            }
+        int stringLength = outputString.length();
+        for (int i = 0; i < stringLength; i++) {
+            writeByte((byte) outputString.charAt(i));
         }
     }
 
@@ -193,7 +197,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public String getByteString(int length) throws IOException {
 
         // get bytes
-        convertBytes = getBytes(length);
+        ioBytes = getBytes(length);
 
         // char for conversion
         char aChar;
@@ -202,7 +206,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
         StringBuilder byteStringBuilder = new StringBuilder();
 
         // loop through bytes
-        for (byte aByte : convertBytes) {
+        for (byte aByte : ioBytes) {
 
             // convert byte to char
             aChar = (char) aByte;
@@ -298,11 +302,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
         int length = getUShortAsInt();
 
         // get bytes
-        convertBytes = getBytes(length);
+        ioBytes = getBytes(length);
 
         // string for conversion
         String utfDecodedString
-                = new String(convertBytes, StandardCharsets.UTF_8);
+                = new String(ioBytes, StandardCharsets.UTF_8);
 
         // return string
         return utfDecodedString;
@@ -327,7 +331,6 @@ public class RandomReaderWriter implements IReadable, IWritable {
         boolean byteOverflowing = false;
         byte bitsToWrite;
         byte writtenBits = 0;
-        byte[] writeBytes;
 
         // extract bytes
         bytesToWrite = bits / 8;
@@ -377,9 +380,6 @@ public class RandomReaderWriter implements IReadable, IWritable {
             }
         }
 
-        // build bytes to write
-        writeBytes = new byte[bytesToWrite];
-
         // write in little endain order
         if (littleEndian) {
 
@@ -397,7 +397,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                         byte orValue = (byte) (value
                                 & AND_VALUES[8 - extraBitCount]);
 
-                        writeBytes[i] = (byte) (extraBits
+                        bufferArray[i] = (byte) (extraBits
                                 | (orValue << extraBitCount));
 
                         leadingBitsToWrite = newLeadingBits;
@@ -406,7 +406,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     } else {
 
                         // append byte to writeBytes array
-                        writeBytes[i] = (byte) (value >>> writtenBits);
+                        bufferArray[i] = (byte) (value >>> writtenBits);
                     }
 
                     // subtract 8 to bit shift to next byte to write
@@ -422,7 +422,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                 } else if (leadingBitsToWrite == 8) {
 
                     // values that are a byte
-                    writeBytes[i] = (byte) ((value << extraBitCount)
+                    bufferArray[i] = (byte) ((value << extraBitCount)
                             | extraBits);
 
                     extraBitCount = 0;
@@ -435,7 +435,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     byte orValue = (byte) (value
                             & AND_VALUES[8 - extraBitCount]);
 
-                    writeBytes[i] = (byte) (extraBits
+                    bufferArray[i] = (byte) (extraBits
                             | (orValue << (extraBitCount)));
 
                     leadingBitsToWrite -= 8;
@@ -450,7 +450,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
             littleEndian = false;
 
             // write the bytes
-            appendBytes(writeBytes, 0, writeBytes.length, true);
+            appendBytes(bufferArray, 0, bytesToWrite, true);
 
             // set little endian back to true
             littleEndian = true;
@@ -501,7 +501,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                         byte orValue = (byte) (value >>> (bits - (8
                                 - extraBitCount)) & AND_VALUES[8 - extraBitCount]);
 
-                        writeBytes[i] = (byte) ((extraBits << (8 - extraBitCount))
+                        bufferArray[i] = (byte) ((extraBits << (8 - extraBitCount))
                                 | orValue);
 
                         leadingBitsToWrite = newLeadingBits;
@@ -510,12 +510,12 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     } else {
 
                         // append byte to writeBytes array
-                        writeBytes[i] = (byte) (value >>> bitsToWrite);
+                        bufferArray[i] = (byte) (value >>> bitsToWrite);
                     }
                 } else if (leadingBitsToWrite == 8) {
 
                     // values that are a byte
-                    writeBytes[i] = (byte) (value | (extraBits << leadingBitsToWrite
+                    bufferArray[i] = (byte) (value | (extraBits << leadingBitsToWrite
                             - extraBitCount));
 
                     extraBitCount = 0;
@@ -528,7 +528,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     byte orValue = (byte) ((value & 0xff) >>> (bits
                             - (8 - extraBitCount)) & AND_VALUES[8 - extraBitCount]);
 
-                    writeBytes[i] = (byte) ((extraBits << (8 - extraBitCount))
+                    bufferArray[i] = (byte) ((extraBits << (8 - extraBitCount))
                             | orValue);
 
                     // subtract 8 from leading bits
@@ -539,7 +539,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
             }
 
             // write the bytes
-            appendBytes(writeBytes, 0, writeBytes.length, true);
+            appendBytes(bufferArray, 0, bytesToWrite, true);
 
             // deal with extra bits for later
             if (bitsToWrite > 0 && leadingBitsToWrite != 0) {
@@ -622,7 +622,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
         }
 
         // extract bytes
-        convertBytes = extractBytes(bytesToExtract, false, true);
+        ioBytes = extractBytes(bytesToExtract, false, true);
 
         // build value to return
         if (littleEndian) {
@@ -631,7 +631,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
             byte readBits = 0;
 
             // read value in big endian
-            for (int i = 0; i < convertBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
                 // deal with a byte align
                 if (byteAlign) {
@@ -648,13 +648,13 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     i--;
                 } // append byte to return value if not last byte or if there 
                 // are no trailing bits
-                else if (i < convertBytes.length - 1 || readTrailingBits == 0) {
-                    returnValue = returnValue | ((long) (convertBytes[i] & 0xff)
+                else if (i < bytesToExtract - 1 || readTrailingBits == 0) {
+                    returnValue |= ((long) (ioBytes[i] & 0xff)
                             << readBits);
                 } else {
 
-                    // append readTrailingBits bits to return value
-                    returnValue = returnValue | ((convertBytes[i]
+                    // append trailingBits bits to return value
+                    returnValue |= ((ioBytes[i]
                             & AND_VALUES[8 - readTrailingBits]) << readBits);
                 }
 
@@ -666,7 +666,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     byteOverflowing = false;
                 } // bitshift one byte to return value if not the second to last 
                 // byte or there are no traling bits or is byte aligned
-                else if (i < convertBytes.length - 1 && !byteAlign) {
+                else if (i < bytesToExtract - 1 && !byteAlign) {
 
                     readBits += 8;
                 } else if (byteAlign) {
@@ -677,7 +677,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
                 } else {
 
                     // set extra bits to the leading bits of last read byte
-                    extraBits = (byte) ((convertBytes[i] >>> (8 - readTrailingBits))
+                    extraBits = (byte) ((ioBytes[i] >>> (8 - readTrailingBits))
                             & AND_VALUES[readTrailingBits]);
 
                     // set extra bit count
@@ -686,11 +686,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
             }
 
             // return extra bits only if convertBytes length is zero
-            if (convertBytes.length == 0) {
+            if (bytesToExtract == 0) {
 
                 if (extraBitCount > bitOffset) {
 
-                    // append readTrailingBits bits to return value
+                    // append trailingBits bits to return value
                     returnValue = extraBits & AND_VALUES[bitOffset];
                     if (!trailingBitsProcessed) {
                         readTrailingBits -= bitOffset;
@@ -712,7 +712,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
         } else {
 
             // read value in big endian
-            for (int i = 0; i < convertBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
                 // deal with a byte align
                 if (byteAlign) {
@@ -733,29 +733,29 @@ public class RandomReaderWriter implements IReadable, IWritable {
                     i--;
                 } // append byte to return value if not last byte or if there are
                 // no trailing bits
-                else if (i < convertBytes.length - 1 || readTrailingBits == 0) {
-                    returnValue = returnValue | (convertBytes[i] & 0xff);
+                else if (i < bytesToExtract - 1 || readTrailingBits == 0) {
+                    returnValue |= (ioBytes[i] & 0xff);
                 } else {
 
-                    // append readTrailingBits bits to return value
-                    returnValue = returnValue | ((convertBytes[i]
+                    // append trailingBits bits to return value
+                    returnValue |= ((ioBytes[i]
                             >>> readTrailingBits) & AND_VALUES[8 - readTrailingBits]);
                 }
 
                 // bitshift one byte to return value if not the second to last 
                 // byte or there are no traling bits or is byte aligned
-                if (i < convertBytes.length - 2 || byteAlign) {
+                if (i < bytesToExtract - 2 || byteAlign) {
 
-                    returnValue = returnValue << 8;
+                    returnValue <<= 8;
                     byteAlign = false;
-                } else if (i == convertBytes.length - 2) {
+                } else if (i == bytesToExtract - 2) {
 
                     // bitshift 8 - tralingBits if second to last
-                    returnValue = returnValue << (8 - readTrailingBits);
+                    returnValue <<= (8 - readTrailingBits);
                 } else {
 
                     // set extra bits to the traling bits of last read byte
-                    extraBits = (byte) (convertBytes[i]
+                    extraBits = (byte) (ioBytes[i]
                             & AND_VALUES[readTrailingBits]);
 
                     // set extra bit count
@@ -764,11 +764,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
             }
 
             // return extra bits only if convertBytes length is zero
-            if (convertBytes.length == 0) {
+            if (bytesToExtract == 0) {
 
                 if (extraBitCount > bitOffset) {
 
-                    // append readTrailingBits bits to return value
+                    // append trailingBits bits to return value
                     returnValue = (extraBits >>> extraBitCount - bitOffset)
                             & AND_VALUES[bitOffset];
                     if (!trailingBitsProcessed) {
@@ -838,7 +838,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeDouble(double value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.rewind();
         buffer.putDouble(value);
         appendBytes(buffer.array(), 0, 8);
     }
@@ -853,11 +853,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public double getDouble() throws IOException {
 
         // get 8 bytes
-        convertBytes = extractBytes(8, littleEndian);
+        ioBytes = extractBytes(8, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(convertBytes);
-        double returnValue = debuffer.getDouble();
+        buffer.rewind();
+        double returnValue = buffer.getDouble();
 
         return returnValue;
     }
@@ -870,7 +870,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeLong(long value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.rewind();
         buffer.putLong(value);
         appendBytes(buffer.array(), 0, 8);
     }
@@ -885,11 +885,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public long getLong() throws IOException {
 
         // get 8 bytes
-        convertBytes = extractBytes(8, littleEndian);
+        ioBytes = extractBytes(8, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(convertBytes);
-        long returnValue = debuffer.getLong();
+        buffer.rewind();
+        long returnValue = buffer.getLong();
 
         return returnValue;
     }
@@ -902,7 +902,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeFloat(float value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putFloat(value);
         appendBytes(buffer.array(), 0, 4);
     }
@@ -916,11 +916,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     @Override
     public float getFloat() throws IOException {
         // get 4 bytes
-        convertBytes = extractBytes(4, littleEndian);
+        ioBytes = extractBytes(4, littleEndian);
 
         // unrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(convertBytes);
-        float returnValue = (float) debuffer.getFloat();
+        buffer.rewind();
+        float returnValue = (float) buffer.getFloat();
 
         return returnValue;
     }
@@ -933,7 +933,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeInt(int value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putInt(value);
         appendBytes(buffer.array(), 0, 4);
     }
@@ -948,14 +948,13 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public long getUIntAsLong() throws IOException {
 
         // get 4 bytes
-        convertBytes = extractBytes(4, littleEndian);
+        ioBytes = extractBytes(4, littleEndian);
 
         // splice 4 bytes with 4 0 bytes to form long
-        byte[] spliceToArray = {0, 0, 0, 0,
-            convertBytes[0], convertBytes[1], convertBytes[2], convertBytes[3]};
+        organiseArrayForUnsignedValue(4);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
-        long returnValue = (long) debuffer.getLong();
+        buffer.rewind();
+        long returnValue = (long) buffer.getLong();
 
         return returnValue;
     }
@@ -970,11 +969,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public int getInt() throws IOException {
 
         // get 4 bytes
-        convertBytes = extractBytes(4, littleEndian);
+        ioBytes = extractBytes(4, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(convertBytes);
-        int returnValue = debuffer.getInt();
+        buffer.rewind();
+        int returnValue = buffer.getInt();
 
         return returnValue;
     }
@@ -987,9 +986,16 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeIntAsTwentyFourBit(int value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putInt(value);
-        appendBytes(buffer.array(), (littleEndian) ? 0 : 1, 3);
+        twentyFourBitShift();
+        appendBytes(buffer.array(), 0, 3);
+    }
+    
+    private void twentyFourBitShift() {
+        for (int i = 0; i < 3; i++) {
+            bufferArray[i] = bufferArray[i + 1];
+        }
     }
 
     /**
@@ -1002,14 +1008,13 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public int getU24BitInt() throws IOException {
 
         // get 3 bytes
-        convertBytes = extractBytes(3, littleEndian);
+        ioBytes = extractBytes(3, littleEndian);
 
         // splice 3 bytes with one zero byte
-        byte[] spliceToArray = {0, convertBytes[0], convertBytes[1],
-            convertBytes[2]};
+        organiseArrayForUnsignedValue(3);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
-        int returnValue = debuffer.getInt();
+        buffer.rewind();
+        int returnValue = buffer.getInt();
 
         return returnValue;
     }
@@ -1024,19 +1029,18 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public int get24BitInt() throws IOException {
 
         // get 3 bytes
-        convertBytes = extractBytes(3, littleEndian);
+        ioBytes = extractBytes(3, littleEndian);
 
         // splice 3 bytes with one zero byte
-        byte[] spliceToArray = {0, convertBytes[0], convertBytes[1],
-            convertBytes[2]};
+        organiseArrayForUnsignedValue(3);
 
         // check if it is negative and then add 11111111 to set it negative
-        if (((convertBytes[0] >>> 7) & 1) == 1) {
-            spliceToArray[0] = (byte) 0xff;
+        if (((ioBytes[1] >>> 7) & 1) == 1) {
+            ioBytes[0] = (byte) 0xff;
         }
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
-        int returnValue = debuffer.getInt();
+        buffer.rewind();
+        int returnValue = buffer.getInt();
 
         return returnValue;
     }
@@ -1049,7 +1053,7 @@ public class RandomReaderWriter implements IReadable, IWritable {
      */
     @Override
     public void writeShort(short value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(2);
+        buffer.rewind();
         buffer.putShort(value);
         appendBytes(buffer.array(), 0, 2);
     }
@@ -1064,13 +1068,13 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public int getUShortAsInt() throws IOException {
 
         // get 2 bytes
-        convertBytes = extractBytes(2, littleEndian);
+        ioBytes = extractBytes(2, littleEndian);
 
         // splice 2 bytes with 2 0 bytes to form int
-        byte[] spliceToArray = {0, 0, convertBytes[0], convertBytes[1]};
+        organiseArrayForUnsignedValue(2);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
-        int returnValue = debuffer.getInt();
+        buffer.rewind();
+        int returnValue = buffer.getInt();
 
         return returnValue;
     }
@@ -1085,11 +1089,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
     public short getShort() throws IOException {
 
         // get 2 bytes
-        convertBytes = extractBytes(2, littleEndian);
+        ioBytes = extractBytes(2, littleEndian);
 
         // unrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(convertBytes);
-        short returnValue = debuffer.getShort();
+        buffer.rewind();
+        short returnValue = buffer.getShort();
 
         return returnValue;
     }
@@ -1111,8 +1115,8 @@ public class RandomReaderWriter implements IReadable, IWritable {
 
         raf.writeByte(value);
         
-        if (buildingCheckByteStream && checkByteStream != null) {
-            checkByteStream.add(value);
+        if (buildingCheckByteStream && checkByteStreamList != null) {
+            checkByteStreamList.add(value);
         }
     }
 
@@ -1147,6 +1151,23 @@ public class RandomReaderWriter implements IReadable, IWritable {
 
         return returnValue;
     }
+    
+    private void organiseArrayForUnsignedValue(int bytes) {
+
+        if (bytes == 3) {
+            for (int i = bytes; i >= 0; i--) {
+                bufferArray[i + 1] = bufferArray[i];
+                if (i == 0) {
+                    bufferArray[i] = 0;
+                }
+            }
+        } else {
+            for (int i = 0; i < bytes; i++) {
+                bufferArray[bytes + i] = bufferArray[i];
+                bufferArray[i] = 0;
+            }
+        }
+    }
 
     /**
      * Reads a signed byte from file.
@@ -1161,8 +1182,8 @@ public class RandomReaderWriter implements IReadable, IWritable {
         byte convertedByte = raf.readByte();
         
         // append byte to check byte stream
-        if (buildingCheckByteStream && checkByteStream != null) {
-            checkByteStream.add(convertedByte);
+        if (buildingCheckByteStream && checkByteStreamList != null) {
+            checkByteStreamList.add(convertedByte);
         }
 
         // bit shift to right position if there are traling bits
@@ -1228,11 +1249,11 @@ public class RandomReaderWriter implements IReadable, IWritable {
      *
      * @param bytesToAppend the byte array
      * @param start
-     * @param end
+     * @param length
      * @param ignoreOffset ignore the bit offset
      * @throws IOException
      */
-    private void appendBytes(byte[] bytesToAppend, int start, int end,
+    private void appendBytes(byte[] bytesToAppend, int start, int length,
             boolean ignoreOffset)
             throws IOException {
 
@@ -1240,14 +1261,14 @@ public class RandomReaderWriter implements IReadable, IWritable {
         if (littleEndian) {
 
             // reverse the order of bytes
-            bytesToAppend = reverseEndian(bytesToAppend);
+            reverseEndian(bytesToAppend, length);
         }
 
         // if leadingBitsToWrite, deal with them
         if (!ignoreOffset && leadingBitsToWrite != 0) {
 
             // bitshift bytes and add leadingBitsToWrite
-            for (int i = 0; i < bytesToAppend.length; i++) {
+            for (int i = 0; i < length; i++) {
 
                 // bit shift a byte
                 bytesToAppend[i] = manageBitOffset(bytesToAppend[i],
@@ -1257,12 +1278,12 @@ public class RandomReaderWriter implements IReadable, IWritable {
         }
 
         // write the bytes
-        raf.write(bytesToAppend, start, end);
+        raf.write(bytesToAppend, start, length);
         
         // append bytes to check byte stream
-        if (buildingCheckByteStream && checkByteStream != null) {
-            for (int i = start; i < end; i++) {
-                checkByteStream.add(bytesToAppend[i]);
+        if (buildingCheckByteStream && checkByteStreamList != null) {
+            for (int i = start; i < length; i++) {
+                checkByteStreamList.add(bytesToAppend[i]);
             }
         }
     }
@@ -1300,9 +1321,9 @@ public class RandomReaderWriter implements IReadable, IWritable {
         raf.read(extractedBytes, 0, bytesToExtract);
         
         // append bytes to check byte stream
-        if (buildingCheckByteStream && checkByteStream != null) {
+        if (buildingCheckByteStream && checkByteStreamList != null) {
             for (int i = 0; i < extractedBytes.length; i++) {
-                checkByteStream.add(extractedBytes[i]);
+                checkByteStreamList.add(extractedBytes[i]);
             }
         }
 
@@ -1329,20 +1350,17 @@ public class RandomReaderWriter implements IReadable, IWritable {
      * @return
      * @throws IOException
      */
-    private byte[] extractBytes(int bytesToExtract, boolean reverse,
-            boolean ignoreOffset)
+    protected byte[] extractBytes(int bytesToExtract,
+            boolean reverse, boolean ignoreOffset)
             throws IOException {
 
-        // define byte array
-        byte[] extractedBytes = new byte[bytesToExtract];
-
         // extract bytes
-        raf.read(extractedBytes, 0, bytesToExtract);
-        
+        raf.read(bufferArray, 0, bytesToExtract);
+
         // append bytes to check byte stream
-        if (buildingCheckByteStream && checkByteStream != null) {
-            for (int i = 0; i < extractedBytes.length; i++) {
-                checkByteStream.add(extractedBytes[i]);
+        if (isBuildingCheckByteStream() && getCheckByteStreamList() != null) {
+            for (int i = 0; i < bytesToExtract; i++) {
+                getCheckByteStreamList().add(bufferArray[i]);
             }
         }
 
@@ -1350,10 +1368,10 @@ public class RandomReaderWriter implements IReadable, IWritable {
         if (!ignoreOffset && extraBitCount != 0) {
 
             // bitshift bytes tralingBits times
-            for (int i = 0; i < extractedBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
-                extractedBytes[i]
-                        = manageBitOffset(extractedBytes[i], extraBitCount);
+                bufferArray[i]
+                        = manageBitOffset(bufferArray[i], extraBitCount);
             }
         }
 
@@ -1361,10 +1379,10 @@ public class RandomReaderWriter implements IReadable, IWritable {
         if (reverse) {
 
             // revers the order of byres
-            extractedBytes = reverseEndian(extractedBytes);
+            reverseEndian(bufferArray, bytesToExtract);
         }
 
-        return extractedBytes;
+        return bufferArray;
     }
 
     /**
@@ -1375,7 +1393,8 @@ public class RandomReaderWriter implements IReadable, IWritable {
      * @return the extracted byte array
      * @throws IOException
      */
-    private byte[] extractBytes(int bytesToExtract, boolean reverse)
+    protected byte[] extractBytes(int bytesToExtract,
+            boolean reverse)
             throws IOException {
         return extractBytes(bytesToExtract, reverse, false);
     }
@@ -1437,17 +1456,34 @@ public class RandomReaderWriter implements IReadable, IWritable {
         // set bitsToShiftIn
         bitsToShiftIn = extraBits;
 
-        // get extra bits from end of byte
-        extraBits
-                = (byte) (value & AND_VALUES[bitCount]);
+        if (littleEndian) {
 
-        // bit shift a byte
-        value = (byte) ((value >>> bitCount) & AND_VALUES[8 - bitCount]);
+            // get extra bits from beginning of byte
+            extraBits = (byte) ((value >> (8 - bitCount))
+                    & AND_VALUES[bitCount]);
 
-        // set extra bit count
-        extraBitCount = bitCount;
+            // bit shift left
+            value = (byte) ((int) value << bitCount);
 
-        value = (byte) (value | (bitsToShiftIn << (8 - bitCount)));
+            // set extra bit count
+            extraBitCount = bitCount;
+
+            value = (byte) ((int) value | bitsToShiftIn);
+
+        } else {
+
+            // get extra bits from end of byte
+            extraBits
+                    = (byte) (value & AND_VALUES[bitCount]);
+
+            // bit shift right
+            value = (byte) ((int) (value & 0xff) >>> bitCount);
+
+            // set extra bit count
+            extraBitCount = bitCount;
+
+            value = (byte) (value | (bitsToShiftIn << (8 - bitCount)));
+        }
 
         return value;
     }

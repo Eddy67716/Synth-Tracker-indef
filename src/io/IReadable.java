@@ -69,7 +69,7 @@ public interface IReadable {
     /**
      * Reads 2-byte character string from file.
      *
-     * @param length Length of string to read
+     * @param length Length of string in characters (not bytes) to read
      * @return The string to return
      * @throws IOException
      */

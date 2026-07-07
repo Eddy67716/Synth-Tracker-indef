@@ -14,7 +14,7 @@ import javax.swing.undo.UndoManager;
 import static module.it.effects.ItEffectValues.encodeEffectByte;
 import static module.it.effects.ItEffectValues.encodeVolumeByte;
 import static music.note.NoteFrequencyConstants.DEF_NOTE_RANGE;
-import ui.view.pattens.PatternCellEditor;
+import ui.view.pattens.PatternCellView;
 
 /**
  *
@@ -25,7 +25,7 @@ public class CellController extends GenericController
 
     // instance variables
     private UndoManager undoManager;
-    private PatternCellEditor patternCell;
+    private PatternCellView patternCell;
     private CellEditorListener cellEditListener;
     private boolean volumeUsed;
     private boolean combinedVolume;
@@ -36,7 +36,7 @@ public class CellController extends GenericController
     private byte[] data;
     private byte[] tempData;
 
-    public CellController(PatternCellEditor patternCell) {
+    public CellController(PatternCellView patternCell) {
         this.patternCell = patternCell;
         // setup the indexes based on the mod format
         switch (patternCell.getModType()) {
@@ -87,7 +87,7 @@ public class CellController extends GenericController
         }
     }
 
-    public PatternCellEditor getPatternCell() {
+    public PatternCellView getPatternCell() {
         return patternCell;
     }
 
@@ -161,6 +161,7 @@ public class CellController extends GenericController
         System.arraycopy(data, 0, tempData, 0, data.length);
 
         patternCell.setData(data);
+        patternCell.repaint();
 
         return patternCell;
     }

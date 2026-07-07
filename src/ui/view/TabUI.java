@@ -30,10 +30,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionListener;
 import lang.LanguageHandler;
-import static ui.UIProperties.DEF_BACKGROUND_COLOUR;
-import static ui.UIProperties.DEF_FORGROUND_COLOUR;
-import static ui.UIProperties.DEF_TEXT_COLOUR;
-import ui.view.details.DetailsUI;
+import ui.view.module.DetailsUI;
 import ui.view.instruments.InstrumentUI;
 import ui.view.pattens.PatternUI;
 import module.ISampleSynth;
@@ -59,7 +56,7 @@ public class TabUI extends JPanel {
     private InstrumentUI instrumentUI;
     private final JPanel playChartPanel;
     private final JPanel fileContentsScrollPanel;
-    private final JScrollPane fileContentsPane;
+    private final JScrollPane fileContentsScrollPane;
     private final JPanel fileContentsPanel;
     private final JToggleButton patternToggleButton;
     private final JList<String> patternList;
@@ -82,7 +79,7 @@ public class TabUI extends JPanel {
         samplePanel = new JPanel();
         playChartPanel = new JPanel();
         fileContentsScrollPanel = new JPanel();
-        fileContentsPane = new JScrollPane();
+        fileContentsScrollPane = new JScrollPane();
         fileContentsPanel = new JPanel();
         patternToggleButton = new JToggleButton();
         patternList = new JList<>();
@@ -244,13 +241,13 @@ public class TabUI extends JPanel {
         fileContentsGBC.weighty = 1;
         fileContentsPanel.add(new JPanel(), fileContentsGBC);
 
-        // set fileContentsPane
-        fileContentsPane.setViewportView(fileContentsPanel);
+        // set fileContentsScrollPane
+        fileContentsScrollPane.setViewportView(fileContentsPanel);
 
         // set scroll panel
         BorderLayout fileContentsScrollPanelLayout = new BorderLayout();
         fileContentsScrollPanel.setLayout(fileContentsScrollPanelLayout);
-        fileContentsScrollPanel.add(fileContentsPane, BorderLayout.CENTER);
+        fileContentsScrollPanel.add(fileContentsScrollPane, BorderLayout.CENTER);
 
         // add scroll panel to split plane
         contentsDataSplitPane.setLeftComponent(fileContentsScrollPanel);

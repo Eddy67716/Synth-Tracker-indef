@@ -1,7 +1,15 @@
 
 // Java program to illustrate 
 // working of SwingWorker
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
+import lang.LanguageHandler;
+import ui.view.samples.AdsrEnvelopeTools;
+import ui.view.windows.find.FindEffect;
+import ui.view.windows.find.FindInstrument;
+import ui.view.windows.find.FindNote;
 import ui.view.windows.find.FindPanel;
 import ui.view.windows.find.FindVolume;
 import ui.view.windows.replace.ReplaceInstrument;
@@ -18,8 +26,8 @@ public class testUIPanel extends JFrame {
     private JPanel testPanel;
 
     // constructor
-    public testUIPanel() {
-        testPanel = new FindPanel((byte)4);
+    public testUIPanel() throws IOException {
+        testPanel = new FindPanel((byte)4, new LanguageHandler());
         init();
     }
 
@@ -30,7 +38,11 @@ public class testUIPanel extends JFrame {
 
         // run the frame
         SwingUtilities.invokeLater(() -> {
-            new testUIPanel().setVisible(true);
+            try {
+                new testUIPanel().setVisible(true);
+            } catch (IOException ex) {
+                Logger.getLogger(testUIPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
 
     }

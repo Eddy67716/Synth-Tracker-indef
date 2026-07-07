@@ -6,15 +6,9 @@ package ui.custom;
 
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
-import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.MetalTheme;
 import javax.swing.plaf.metal.OceanTheme;
-import static ui.UIProperties.DEF_BACKGROUND_COLOUR;
-import static ui.UIProperties.DEF_HEAVILY_WASHED_COLOUR;
-import static ui.UIProperties.DEF_SHADOW_COLOUR;
-import static ui.UIProperties.DEF_WASHED_COLOUR;
-import static ui.UIProperties.DEF_WASHED_SHADOW_COLOUR;
-import static ui.UIProperties.DEF_HIGHLIGHT_COLOUR;
+import ui.UIProperties;
 
 /**
  *
@@ -37,12 +31,12 @@ public class SynthCustomMetalTheme extends MetalTheme {
     private final FontUIResource subTextFont;
     
     public SynthCustomMetalTheme() {
-        primary1 = new ColorUIResource(DEF_HIGHLIGHT_COLOUR);
-        primary2 = new ColorUIResource(DEF_WASHED_COLOUR);
-        primary3 = new ColorUIResource(DEF_HEAVILY_WASHED_COLOUR);
-        secondary1 = new ColorUIResource(DEF_SHADOW_COLOUR);
-        secondary2 = new ColorUIResource(DEF_WASHED_SHADOW_COLOUR);
-        secondary3 = new ColorUIResource(DEF_BACKGROUND_COLOUR);
+        primary1 = new ColorUIResource(UIProperties.getHighlightColour());
+        primary2 = new ColorUIResource(UIProperties.getWashedColour());
+        primary3 = new ColorUIResource(UIProperties.getHeavilyWashedColour());
+        secondary1 = new ColorUIResource(UIProperties.getShadowColour());
+        secondary2 = new ColorUIResource(UIProperties.getWashedShadowColour());
+        secondary3 = new ColorUIResource(UIProperties.getBackgroundColour());
         OceanTheme oceanTheme = new OceanTheme();
         controlTextFont = oceanTheme.getControlTextFont();
         systemTextFont = oceanTheme.getSystemTextFont();

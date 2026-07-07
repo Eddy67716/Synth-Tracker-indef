@@ -17,13 +17,13 @@ public abstract class GenericController implements IUndoable {
     // record undo on the collection
     private boolean recordingUndos;
     // record alterations onto a model
-    private boolean alteringModels;
+    private boolean alteringDataSources;
     // current undoManager for controller
     private UndoManager currentUndoManager;
 
     public GenericController() {
         recordingUndos = true;
-        alteringModels = true;
+        alteringDataSources = true;
     }
 
     // getters
@@ -31,8 +31,8 @@ public abstract class GenericController implements IUndoable {
         return recordingUndos;
     }
 
-    public boolean isAlteringModels() {
-        return alteringModels;
+    public boolean isAlteringDataSources() {
+        return alteringDataSources;
     }
 
     public UndoManager getCurrentUndoManager() {
@@ -44,8 +44,8 @@ public abstract class GenericController implements IUndoable {
         this.recordingUndos = recordingUndos;
     }
 
-    public void setAlteringModels(boolean alteringModels) {
-        this.alteringModels = alteringModels;
+    public void setAlteringDataSources(boolean alteringDataSources) {
+        this.alteringDataSources = alteringDataSources;
     }
 
     public void setCurrentUndoManager(UndoManager currentUndoManager) {
@@ -60,9 +60,9 @@ public abstract class GenericController implements IUndoable {
     @Override
     public void undo() {
         if (getCurrentUndoManager().canUndo()) {
-            recordingUndos = false;
+            setRecordingUndos(false);
             currentUndoManager.undo();
-            recordingUndos = (true);
+            setRecordingUndos(true);
         } else {
             playErrorSound();
         }
@@ -71,9 +71,9 @@ public abstract class GenericController implements IUndoable {
     @Override
     public void redo() {
         if (getCurrentUndoManager().canRedo()) {
-            recordingUndos = false;
+            setRecordingUndos(false);
             currentUndoManager.redo();
-            recordingUndos = (true);
+            setRecordingUndos(true);
         } else {
             playErrorSound();
         }

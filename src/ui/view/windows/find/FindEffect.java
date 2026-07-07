@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import lang.LanguageHandler;
 import static ui.UIProperties.BOLD_FONT;
 import static ui.UIProperties.DEF_INSETS;
 
@@ -24,6 +25,7 @@ public class FindEffect extends JPanel {
     
     // instance variables
     private int modType;
+    private LanguageHandler languageHandler;
     private Border findEffectBorder;
     private GridBagLayout findEffectLayout;
     private GridBagConstraints fec;
@@ -32,8 +34,9 @@ public class FindEffect extends JPanel {
     private JLabel effectValueLabel;
     private JSpinner effectValueSpinner;
     
-    public FindEffect(int modType) {
+    public FindEffect(int modType, LanguageHandler languageHandler) {
         this.modType = modType;
+        this.languageHandler = languageHandler;
         init();
     }
     

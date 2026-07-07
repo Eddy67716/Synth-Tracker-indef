@@ -231,7 +231,7 @@ public class FilterOptions extends JPanel {
         // JPanel at bottom
         foc.gridx = 0;
         foc.gridy++;
-        foc.gridwidth = 3;
+        foc.gridwidth = GridBagConstraints.REMAINDER;
         foc.weighty = 1.0;
         foc.gridheight = GridBagConstraints.REMAINDER;
         add(new JPanel(), foc);

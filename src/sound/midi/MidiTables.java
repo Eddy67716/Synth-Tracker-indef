@@ -11,6 +11,8 @@ package sound.midi;
 public class MidiTables {
 
     public static final String[] MIDI_GEN_1_PROGRAM_LIST = {
+        // unspecified
+        "unspecified",
         // Piano
         "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano",
         "Honky-tonk Piano", "Electric Piano 1", "Electric Piano 2",
@@ -65,8 +67,6 @@ public class MidiTables {
         // Sound effects
         "Reverse Cymbal", "Guitar Fret Noise", "Breath Noise", "Seashore", 
         "Bird Tweet", "Telephone Ring",  "Helicopter", "Applause", "Gunshot",
-        // unspecified
-        "unspecified"
     };
     
     public static final String[] DRUM_NAMES = {

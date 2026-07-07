@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 public class ReplacePanel extends JPanel {
     // instance variables
     private int modType;
-    private GridBagConstraints fpc;
+    private GridBagConstraints rpc;
     // note
     private ReplaceNote ReplaceNote;
     // instrument
@@ -56,42 +56,43 @@ public class ReplacePanel extends JPanel {
     
     public void init() {
         this.setLayout(new GridBagLayout());
-        fpc = new GridBagConstraints();
-        fpc.anchor = GridBagConstraints.NORTHWEST;
+        rpc = new GridBagConstraints();
+        rpc.fill = GridBagConstraints.BOTH;  
+        rpc.anchor = GridBagConstraints.NORTHWEST;
         
         // find note
         ReplaceNote = new ReplaceNote(this.modType);
         
-        fpc.weightx = 1;
-        fpc.weighty = 0;
-        fpc.gridwidth = GridBagConstraints.REMAINDER;
-        fpc.gridheight = 1;
-        fpc.gridx = 0;
-        fpc.gridy = 0;
+        rpc.weightx = 1;
+        rpc.weighty = 0;
+        rpc.gridwidth = GridBagConstraints.REMAINDER;
+        rpc.gridheight = 1;
+        rpc.gridx = 0;
+        rpc.gridy = 0;
         
-        add(ReplaceNote, fpc);
+        add(ReplaceNote, rpc);
         
         // find instrument
         ReplaceInstrument = new ReplaceInstrument(modType);
         
-        fpc.gridy++;
+        rpc.gridy++;
         
-        add(ReplaceInstrument, fpc);
+        add(ReplaceInstrument, rpc);
         
         // find volume effect
         ReplaceVolume = new ReplaceVolume(modType);
         
-        fpc.gridy++;
+        rpc.gridy++;
         
-        add(ReplaceVolume, fpc);
+        add(ReplaceVolume, rpc);
         
         // find effect 1
         replaceEffect1 = new ReplaceEffect(modType);
         
-        fpc.gridy++;
-        fpc.weighty = 1;
-        fpc.gridheight = GridBagConstraints.REMAINDER;
+        rpc.gridy++;
+        rpc.weighty = 1;
+        rpc.gridheight = GridBagConstraints.REMAINDER;
         
-        add(replaceEffect1, fpc);
+        add(replaceEffect1, rpc);
     }
 }

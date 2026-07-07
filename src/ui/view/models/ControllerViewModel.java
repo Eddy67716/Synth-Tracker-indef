@@ -4,11 +4,11 @@
  */
 package ui.view.models;
 
-import ui.controllers.DetailsController;
+import ui.controllers.module.ModuleController;
 import ui.controllers.IUndoable;
-import ui.controllers.InstrumentController;
+import ui.controllers.instruments.InstrumentController;
 import ui.controllers.PatternController;
-import ui.controllers.SampleController;
+import ui.controllers.samples.SampleController;
 
 /**
  *
@@ -17,13 +17,13 @@ import ui.controllers.SampleController;
 public class ControllerViewModel {
 
     // controllers
-    private DetailsController detailsController;
+    private ModuleController detailsController;
     private InstrumentController instrumentController;
     private SampleController sampleController;
     private PatternController patternController;
 
     // constructor
-    public ControllerViewModel(DetailsController headerController,
+    public ControllerViewModel(ModuleController headerController,
             InstrumentController instrumentController,
             SampleController sampleController,
             PatternController patternController) {
@@ -39,7 +39,7 @@ public class ControllerViewModel {
     }
 
     // getters
-    public DetailsController getDetailsController() {
+    public ModuleController getDetailsController() {
         return detailsController;
     }
 
@@ -56,7 +56,7 @@ public class ControllerViewModel {
     }
 
     // settters
-    public void setDetailsController(DetailsController detailsController) {
+    public void setDetailsController(ModuleController detailsController) {
         this.detailsController = detailsController;
     }
 

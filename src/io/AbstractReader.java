@@ -51,8 +51,11 @@ public abstract class AbstractReader implements IReadable {
     private byte trailingBits;
     // the bit offset over the byte mark
     private byte bitOffset;
-    
-    
+    // byte buffer for primitive data types
+    private byte[] bufferArray;
+    // buffer object
+    ByteBuffer debuffer;
+
     /**
      * The 2-args constructor for this object.
      *
@@ -62,8 +65,10 @@ public abstract class AbstractReader implements IReadable {
     public AbstractReader(String fileName, boolean littleEndian) {
         this.littleEndian = littleEndian;
         this.fileName = fileName;
+        bufferArray = new byte[8];
+        debuffer = ByteBuffer.wrap(bufferArray);
     }
-    
+
     /**
      * The 1-arg constructor for this object.
      *
@@ -72,7 +77,7 @@ public abstract class AbstractReader implements IReadable {
     public AbstractReader(String fileName) {
         this(fileName, false);
     }
-    
+
     /**
      * The 1-arg constructor for this object.
      *
@@ -81,14 +86,14 @@ public abstract class AbstractReader implements IReadable {
     public AbstractReader(boolean littleEndian) {
         this("", littleEndian);
     }
-    
+
     /**
      * The no args constructor for this object.
      */
     public AbstractReader() {
         this("");
     }
-    
+
     // getters
     public String getFileName() {
         return fileName;
@@ -135,7 +140,7 @@ public abstract class AbstractReader implements IReadable {
     public byte getBitOffset() {
         return bitOffset;
     }
-    
+
     // setters
     public void setFileName(String fileName) {
         this.fileName = fileName;
@@ -178,7 +183,7 @@ public abstract class AbstractReader implements IReadable {
     public void setBitOffset(byte bitOffset) {
         this.bitOffset = bitOffset;
     }
-    
+
     // some implemented methods
     /**
      * Starts saving a check byte stream that can be used for CRC or other
@@ -224,7 +229,7 @@ public abstract class AbstractReader implements IReadable {
     public void endCheckByteStream() {
         buildingCheckByteStream = false;
     }
-    
+
     /**
      * Reads byte string from file.
      *
@@ -375,7 +380,7 @@ public abstract class AbstractReader implements IReadable {
             byte readBits = 0;
 
             // read value in big endian
-            for (int i = 0; i < readBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
                 // deal with a byte align
                 if (byteAlign) {
@@ -392,7 +397,7 @@ public abstract class AbstractReader implements IReadable {
                     i--;
                 } // append byte to return value if not last byte or if there 
                 // are no trailing bits
-                else if (i < readBytes.length - 1 || trailingBits == 0) {
+                else if (i < bytesToExtract - 1 || trailingBits == 0) {
                     returnValue |= ((long) (readBytes[i] & 0xff)
                             << readBits);
                 } else {
@@ -410,7 +415,7 @@ public abstract class AbstractReader implements IReadable {
                     byteOverflowing = false;
                 } // bitshift one byte to return value if not the second to last 
                 // byte or there are no traling bits or is byte aligned
-                else if (i < readBytes.length - 1 && !byteAlign) {
+                else if (i < bytesToExtract - 1 && !byteAlign) {
 
                     readBits += 8;
                 } else if (byteAlign) {
@@ -430,7 +435,7 @@ public abstract class AbstractReader implements IReadable {
             }
 
             // return extra bits only if convertBytes length is zero
-            if (readBytes.length == 0) {
+            if (bytesToExtract == 0) {
 
                 if (extraBitCount > bitOffset) {
 
@@ -456,7 +461,7 @@ public abstract class AbstractReader implements IReadable {
         } else {
 
             // read value in big endian
-            for (int i = 0; i < readBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
                 // deal with a byte align
                 if (byteAlign) {
@@ -477,7 +482,7 @@ public abstract class AbstractReader implements IReadable {
                     i--;
                 } // append byte to return value if not last byte or if there are
                 // no trailing bits
-                else if (i < readBytes.length - 1 || trailingBits == 0) {
+                else if (i < bytesToExtract - 1 || trailingBits == 0) {
                     returnValue |= (readBytes[i] & 0xff);
                 } else {
 
@@ -488,11 +493,11 @@ public abstract class AbstractReader implements IReadable {
 
                 // bitshift one byte to return value if not the second to last 
                 // byte or there are no traling bits or is byte aligned
-                if (i < readBytes.length - 2 || byteAlign) {
+                if (i < bytesToExtract - 2 || byteAlign) {
 
                     returnValue <<= 8;
                     byteAlign = false;
-                } else if (i == readBytes.length - 2) {
+                } else if (i == bytesToExtract - 2) {
 
                     // bitshift 8 - tralingBits if second to last
                     returnValue <<= (8 - trailingBits);
@@ -508,7 +513,7 @@ public abstract class AbstractReader implements IReadable {
             }
 
             // return extra bits only if convertBytes length is zero
-            if (readBytes.length == 0) {
+            if (bytesToExtract == 0) {
 
                 if (extraBitCount > bitOffset) {
 
@@ -574,7 +579,7 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(8, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(readBytes);
+        debuffer.rewind();
         long returnValue = debuffer.getLong();
 
         return returnValue;
@@ -593,7 +598,7 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(8, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(readBytes);
+        debuffer.rewind();
         double returnValue = debuffer.getDouble();
 
         return returnValue;
@@ -612,10 +617,9 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(4, littleEndian);
 
         // splice 4 bytes with 4 0 bytes to form long
-        byte[] spliceToArray = {0, 0, 0, 0,
-            readBytes[0], readBytes[1], readBytes[2], readBytes[3]};
+        organiseArrayForUnsignedValue(4);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
+        debuffer.rewind();
         long returnValue = (long) debuffer.getLong();
 
         return returnValue;
@@ -634,7 +638,7 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(4, littleEndian);
 
         // unwrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(readBytes);
+        debuffer.rewind();
         int returnValue = debuffer.getInt();
 
         return returnValue;
@@ -652,7 +656,7 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(4, littleEndian);
 
         // unrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(readBytes);
+        debuffer.rewind();
         float returnValue = (float) debuffer.getFloat();
 
         return returnValue;
@@ -671,10 +675,9 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(3, littleEndian);
 
         // splice 3 bytes with one zero byte
-        byte[] spliceToArray = {0, readBytes[0], readBytes[1],
-            readBytes[2]};
+        organiseArrayForUnsignedValue(3);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
+        debuffer.rewind();
         int returnValue = debuffer.getInt();
 
         return returnValue;
@@ -693,15 +696,14 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(3, littleEndian);
 
         // splice 3 bytes with one zero byte
-        byte[] spliceToArray = {0, readBytes[0], readBytes[1],
-            readBytes[2]};
+        organiseArrayForUnsignedValue(3);
 
         // check if it is negative and then add 11111111 to set it negative
-        if (((readBytes[0] >>> 7) & 1) == 1) {
-            spliceToArray[0] = (byte) 0xff;
+        if (((readBytes[1] >>> 7) & 1) == 1) {
+            readBytes[0] = (byte) 0xff;
         }
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
+        debuffer.rewind();
         int returnValue = debuffer.getInt();
 
         return returnValue;
@@ -720,9 +722,9 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(2, littleEndian);
 
         // splice 2 bytes with 2 0 bytes to form int
-        byte[] spliceToArray = {0, 0, readBytes[0], readBytes[1]};
+        organiseArrayForUnsignedValue(2);
 
-        ByteBuffer debuffer = ByteBuffer.wrap(spliceToArray);
+        debuffer.rewind();
         int returnValue = debuffer.getInt();
 
         return returnValue;
@@ -741,12 +743,12 @@ public abstract class AbstractReader implements IReadable {
         readBytes = extractBytes(2, littleEndian);
 
         // unrap value to return
-        ByteBuffer debuffer = ByteBuffer.wrap(readBytes);
+        debuffer.rewind();
         short returnValue = debuffer.getShort();
 
         return returnValue;
     }
-    
+
     /**
      * Reads an unsigned byte from file.
      *
@@ -770,6 +772,23 @@ public abstract class AbstractReader implements IReadable {
         return returnValue;
     }
 
+    private void organiseArrayForUnsignedValue(int bytes) {
+
+        if (bytes == 3) {
+            for (int i = bytes; i >= 0; i--) {
+                bufferArray[i + 1] = bufferArray[i];
+                if (i == 0) {
+                    bufferArray[i] = 0;
+                }
+            }
+        } else {
+            for (int i = 0; i < bytes; i++) {
+                bufferArray[bytes + i] = bufferArray[i];
+                bufferArray[i] = 0;
+            }
+        }
+    }
+
     /**
      * Reads a signed byte from file.
      *
@@ -781,7 +800,7 @@ public abstract class AbstractReader implements IReadable {
 
         // get byte
         byte convertedByte = readByte();
-        
+
         // append byte to check byte stream
         if (buildingCheckByteStream && checkByteStreamList != null) {
             checkByteStreamList.add(convertedByte);
@@ -798,7 +817,7 @@ public abstract class AbstractReader implements IReadable {
 
         return convertedByte;
     }
-    
+
     /**
      * Reads a boolean value from file
      *
@@ -817,7 +836,7 @@ public abstract class AbstractReader implements IReadable {
 
         return returnValue;
     }
-    
+
     /**
      * Returns available bytes
      *
@@ -828,7 +847,7 @@ public abstract class AbstractReader implements IReadable {
     public int available() throws IOException {
         return getAvailableBytes();
     }
-    
+
     /**
      * Skip a provided number of bytes.
      *
@@ -842,15 +861,15 @@ public abstract class AbstractReader implements IReadable {
         boolean skipped = false;
 
         if (getAvailableBytes() > bytes) {
-            skipBytes((int)bytes);
+            skipFileBytes((int) bytes);
             filePosition += bytes;
             skipped = true;
         }
-        
+
         // append bytes to check byte stream
         if (isBuildingCheckByteStream() && checkByteStreamList != null) {
             for (int i = 0; i < bytes; i++) {
-                checkByteStreamList.add((byte)0);
+                checkByteStreamList.add((byte) 0);
             }
         }
 
@@ -873,7 +892,7 @@ public abstract class AbstractReader implements IReadable {
 
         // extract bytes
         readBytes(extractedBytes);
-        
+
         // append bytes to check byte stream
         if (buildingCheckByteStream && checkByteStreamList != null) {
             for (int i = 0; i < extractedBytes.length; i++) {
@@ -897,7 +916,7 @@ public abstract class AbstractReader implements IReadable {
 
         return extractedBytes;
     }
-    
+
     /**
      * Extracts a byte array to build other data type from.
      *
@@ -907,20 +926,21 @@ public abstract class AbstractReader implements IReadable {
      * @return
      * @throws IOException
      */
-    protected byte[] extractBytes(int bytesToExtract, boolean reverse,
-            boolean ignoreOffset)
+    protected byte[] extractBytes(int bytesToExtract,
+            boolean reverse, boolean ignoreOffset)
             throws IOException {
 
-        // define byte array
-        byte[] extractedBytes = new byte[bytesToExtract];
-
         // extract bytes
-        readBytes(extractedBytes);
-        
+        if (bufferArray.length == bytesToExtract) {
+            readBytes(bufferArray);
+        } else {
+            readBytes(bufferArray, bytesToExtract);
+        }
+
         // append bytes to check byte stream
         if (isBuildingCheckByteStream() && getCheckByteStreamList() != null) {
-            for (int i = 0; i < extractedBytes.length; i++) {
-                getCheckByteStreamList().add(extractedBytes[i]);
+            for (int i = 0; i < bytesToExtract; i++) {
+                getCheckByteStreamList().add(bufferArray[i]);
             }
         }
 
@@ -931,10 +951,10 @@ public abstract class AbstractReader implements IReadable {
         if (!ignoreOffset && extraBitCount != 0) {
 
             // bitshift bytes tralingBits times
-            for (int i = 0; i < extractedBytes.length; i++) {
+            for (int i = 0; i < bytesToExtract; i++) {
 
-                extractedBytes[i]
-                        = manageBitOffset(extractedBytes[i], extraBitCount);
+                bufferArray[i]
+                        = manageBitOffset(bufferArray[i], extraBitCount);
             }
         }
 
@@ -942,10 +962,10 @@ public abstract class AbstractReader implements IReadable {
         if (reverse) {
 
             // revers the order of byres
-            extractedBytes = reverseEndian(extractedBytes);
+            reverseEndian(bufferArray, bytesToExtract);
         }
 
-        return extractedBytes;
+        return bufferArray;
     }
 
     /**
@@ -956,11 +976,12 @@ public abstract class AbstractReader implements IReadable {
      * @return the extracted byte array
      * @throws IOException
      */
-    protected byte[] extractBytes(int bytesToExtract, boolean reverse)
+    protected byte[] extractBytes(int bytesToExtract,
+            boolean reverse)
             throws IOException {
         return extractBytes(bytesToExtract, reverse, false);
     }
-    
+
     /**
      * Processes any bit-shifting needed on the value
      *
@@ -997,7 +1018,7 @@ public abstract class AbstractReader implements IReadable {
                     = (byte) (value & AND_VALUES[bitCount]);
 
             // bit shift a byte
-            value = (byte) ((value >>> bitCount) & AND_VALUES[8 - bitCount]);
+            value = (byte) ((int) (value & 0xff) >>> bitCount);
 
             // set extra bit count
             extraBitCount = bitCount;
@@ -1007,12 +1028,15 @@ public abstract class AbstractReader implements IReadable {
 
         return value;
     }
-    
-    protected abstract byte readByte() throws IOException ;
-    
-    protected abstract void readBytes(byte[] array) throws IOException ;
-    
-    protected abstract int getAvailableBytes() throws IOException ;
-    
-    protected abstract void skipBytes(int bytes) throws IOException ;
+
+    protected abstract byte readByte() throws IOException;
+
+    protected abstract void readBytes(byte[] array, int length)
+            throws IOException;
+
+    protected abstract void readBytes(byte[] array) throws IOException;
+
+    protected abstract int getAvailableBytes() throws IOException;
+
+    protected abstract void skipFileBytes(long bytes) throws IOException;
 }

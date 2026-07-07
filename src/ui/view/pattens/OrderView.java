@@ -5,6 +5,7 @@
 package ui.view.pattens;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -18,7 +19,7 @@ public class OrderView extends JPanel {
     // instance variables
     private int modType;
     private short[] orders;
-    private JList<Short> orderList;
+    private JList<String> orderList;
     
     // constructor
     public OrderView(int modType, short[] orders) {
@@ -32,9 +33,15 @@ public class OrderView extends JPanel {
     public void init() {
         setLayout(new BorderLayout());
         orderList = new JList<>();
-        Short[] listData = new Short[orders.length];
+        String[] listData = new String[orders.length];
         for (int i = 0; i < orders.length; i++) {
-            listData[i] = orders[i];
+            if (orders[i] == 255) {
+                listData[i] = "---";
+            } else if (orders[i] == 254) {
+                listData[i] = "+++";
+            } else {
+                listData[i] = Short.toString(orders[i]);
+            }
         }
         orderList.setListData(listData);
         add(orderList, BorderLayout.CENTER);

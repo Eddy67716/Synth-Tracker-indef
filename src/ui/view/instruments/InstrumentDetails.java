@@ -118,6 +118,15 @@ public class InstrumentDetails extends JPanel {
             idc.gridwidth = GridBagConstraints.REMAINDER;
             add(fileNameField, idc);
         }
+        
+        // add pannel to bottom column
+        idc.gridx = 0;
+        idc.gridy++;
+        idc.weightx = 2;
+        idc.weighty = 1;
+        idc.gridwidth = GridBagConstraints.REMAINDER;
+        idc.gridheight = GridBagConstraints.REMAINDER;
+        add(new JPanel(), idc);
     }
     
     // listeners

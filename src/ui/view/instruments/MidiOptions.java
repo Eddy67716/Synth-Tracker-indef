@@ -10,6 +10,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.border.Border;
@@ -23,6 +24,8 @@ import static ui.UIProperties.DEF_INSETS;
 import static ui.UIProperties.LARGE_FIELD_SIZE;
 import static ui.UIProperties.MEDIUM_FIELD_SIZE;
 import static sound.midi.MidiTables.MIDI_GEN_1_PROGRAM_LIST;
+import static ui.UIProperties.ITALIC_FONT;
+import static ui.UIProperties.LARGE_LABEL_SIZE;
 
 /**
  *
@@ -40,7 +43,7 @@ public class MidiOptions extends JPanel {
     private JLabel midiChannelLabel;
     private JSpinner midiChannelSpinner;              // it and str
     private SpinnerModel midiChannelSpinnerModel;
-    private JLabel midiInstrumentLabel;
+    private JLabel midiProgramLabel;
     private JSpinner midiInstrumentSpinner;              // it and str
     private SpinnerModel midiInstrumentSpinnerModel;
     private JLabel midiInstrumentsTypeLabel;
@@ -48,6 +51,8 @@ public class MidiOptions extends JPanel {
     private JSpinner midiBankSpinner;              // it and str
     private SpinnerModel midiBankSpinnerModel;
     private JLabel midiBankTypeLabel;
+    private JLabel midiInstrumentNameLabel;
+    private JLabel midiInstrumentDisplayLabel;
 
     // constructor
     public MidiOptions(int modType, LanguageHandler languageHandler) {
@@ -67,6 +72,10 @@ public class MidiOptions extends JPanel {
 
     public JSpinner getMidiBankSpinner() {
         return midiBankSpinner;
+    }
+
+    public JLabel getMidiInstrumentDisplayLabel() {
+        return midiInstrumentDisplayLabel;
     }
 
     public void init() {
@@ -102,7 +111,7 @@ public class MidiOptions extends JPanel {
         add(midiChannelLabel, moc);
 
         // set MIDI channel spinner model
-        midiChannelSpinnerModel = new SpinnerNumberModel(0, 0, 17, 1);
+        midiChannelSpinnerModel = new SpinnerNumberModel(0, 0, 16, 1);
 
         // set the MIDI channel value spinner
         midiChannelSpinner = new JSpinner(midiChannelSpinnerModel);
@@ -113,16 +122,16 @@ public class MidiOptions extends JPanel {
         moc.gridwidth = GridBagConstraints.REMAINDER;
         add(midiChannelSpinner, moc);
 
-        // set the MIDI instrument label
-        midiInstrumentLabel = new JLabel(languageHandler
+        // set the MIDI program label
+        midiProgramLabel = new JLabel(languageHandler
                 .getLanguageText("midi.options.program"));
-        midiInstrumentLabel.setFont(DEF_FONT);
-        midiInstrumentLabel.setPreferredSize(LARGE_FIELD_SIZE);
+        midiProgramLabel.setFont(DEF_FONT);
+        midiProgramLabel.setPreferredSize(LARGE_FIELD_SIZE);
         moc.gridx = 0;
         moc.weightx = 0.0;
         moc.gridwidth = 0;
         moc.gridy++;
-        add(midiInstrumentLabel, moc);
+        add(midiProgramLabel, moc);
 
         // set MIDI instrument spinner model
         midiInstrumentSpinnerModel = new SpinnerNumberModel(0, 0, 128, 1);
@@ -147,7 +156,7 @@ public class MidiOptions extends JPanel {
         add(midiBankLabel, moc);
 
         // set MIDI bank spinner model
-        midiBankSpinnerModel = new SpinnerNumberModel(0, 0, 16384, 1);
+        midiBankSpinnerModel = new SpinnerNumberModel(0, 0, 16383, 1);
 
         // set the MIDI bank value spinner
         midiBankSpinner = new JSpinner(midiBankSpinnerModel);
@@ -156,6 +165,28 @@ public class MidiOptions extends JPanel {
         moc.weightx = 1.0;
         moc.gridwidth = GridBagConstraints.REMAINDER;
         add(midiBankSpinner, moc);
+        
+        // set the instrument name label
+        midiInstrumentNameLabel = new JLabel(languageHandler
+                .getLanguageText("instrument.details.name"));
+        midiInstrumentNameLabel.setFont(DEF_FONT);
+        midiInstrumentNameLabel.setPreferredSize(LARGE_LABEL_SIZE);
+        moc.gridx = 0;
+        moc.gridy++;
+        moc.weightx = 1.0;
+        moc.gridwidth = GridBagConstraints.REMAINDER;
+        add(midiInstrumentNameLabel, moc);
+
+        // set the instrument name field
+        midiInstrumentDisplayLabel = new JLabel("");
+        midiInstrumentDisplayLabel.setFont(ITALIC_FONT);
+        midiInstrumentDisplayLabel.setToolTipText(languageHandler
+                .getLanguageText("instrument.details.name.desc"));
+        midiInstrumentDisplayLabel.setPreferredSize(LARGE_LABEL_SIZE);
+        moc.gridy++;
+        moc.weightx = 1.0;
+        moc.gridwidth = GridBagConstraints.REMAINDER;
+        add(midiInstrumentDisplayLabel, moc);
 
         // add pannel to bottom column
         moc.gridx = 0;

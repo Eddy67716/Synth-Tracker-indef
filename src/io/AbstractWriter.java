@@ -18,9 +18,6 @@ package io;
 
 import static io.IOMethods.reverseEndian;
 import static io.Writer.AND_VALUES;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +47,10 @@ public abstract class AbstractWriter implements IWritable {
     private byte extraBitCount;
     // amount of extra offsetted bits
     private byte leadingBits;
+    // buffer array
+    private byte[] bufferArray;
+    // buffer
+    private ByteBuffer buffer;
     
     /**
      * The 2-args constructor used to write a file with a file name string.
@@ -62,6 +63,8 @@ public abstract class AbstractWriter implements IWritable {
             throws IOException {
         this.fileName = fileName;
         this.littleEndian = littleEndian;
+        bufferArray = new byte[8];
+        buffer = ByteBuffer.wrap(bufferArray);
     }
 
     /**
@@ -251,7 +254,6 @@ public abstract class AbstractWriter implements IWritable {
         boolean byteOverflowing = false;
         byte bitsToWrite;
         byte writtenBits = 0;
-        byte[] writeBytes;
 
         // extract bytes
         bytesToWrite = bits / 8;
@@ -296,9 +298,6 @@ public abstract class AbstractWriter implements IWritable {
             leadingBits = bitOffset;
         }
 
-        // build bytes to write
-        writeBytes = new byte[bytesToWrite];
-
         // write in little endain order
         if (littleEndian) {
 
@@ -316,7 +315,7 @@ public abstract class AbstractWriter implements IWritable {
                         byte orValue = (byte) (value
                                 & AND_VALUES[8 - extraBitCount]);
 
-                        writeBytes[i] = (byte) (extraBits
+                        bufferArray[i] = (byte) (extraBits
                                 | (orValue << extraBitCount));
 
                         leadingBits = newLeadingBits;
@@ -325,7 +324,7 @@ public abstract class AbstractWriter implements IWritable {
                     } else {
 
                         // append byte to writeBytes array
-                        writeBytes[i] = (byte) (value >>> writtenBits);
+                        bufferArray[i] = (byte) (value >>> writtenBits);
                     }
 
                     // subtract 8 to bit shift to next byte to write
@@ -341,7 +340,7 @@ public abstract class AbstractWriter implements IWritable {
                 } else if (leadingBits == 8) {
 
                     // values that are a byte
-                    writeBytes[i] = (byte) ((value << extraBitCount)
+                    bufferArray[i] = (byte) ((value << extraBitCount)
                             | extraBits);
 
                     extraBitCount = 0;
@@ -354,7 +353,7 @@ public abstract class AbstractWriter implements IWritable {
                     byte orValue = (byte) (value
                             & AND_VALUES[8 - extraBitCount]);
 
-                    writeBytes[i] = (byte) (extraBits
+                    bufferArray[i] = (byte) (extraBits
                             | (orValue << (extraBitCount)));
 
                     leadingBits -= 8;
@@ -369,7 +368,7 @@ public abstract class AbstractWriter implements IWritable {
             littleEndian = false;
 
             // write the bytes
-            appendBytes(writeBytes, 0, writeBytes.length, true);
+            appendBytes(bufferArray, 0, bytesToWrite, true);
 
             // set little endian back to true
             littleEndian = true;
@@ -420,7 +419,7 @@ public abstract class AbstractWriter implements IWritable {
                         byte orValue = (byte) (value >>> (bits - (8
                                 - extraBitCount)) & AND_VALUES[8 - extraBitCount]);
 
-                        writeBytes[i] = (byte) ((extraBits << (8 - extraBitCount))
+                        bufferArray[i] = (byte) ((extraBits << (8 - extraBitCount))
                                 | orValue);
 
                         leadingBits = newLeadingBits;
@@ -429,12 +428,12 @@ public abstract class AbstractWriter implements IWritable {
                     } else {
 
                         // append byte to writeBytes array
-                        writeBytes[i] = (byte) (value >>> bitsToWrite);
+                        bufferArray[i] = (byte) (value >>> bitsToWrite);
                     }
                 } else if (leadingBits == 8) {
 
                     // values that are a byte
-                    writeBytes[i] = (byte) (value | (extraBits << leadingBits
+                    bufferArray[i] = (byte) (value | (extraBits << leadingBits
                             - extraBitCount));
 
                     extraBitCount = 0;
@@ -447,7 +446,7 @@ public abstract class AbstractWriter implements IWritable {
                     byte orValue = (byte) ((value & 0xff) >>> (bits
                             - (8 - extraBitCount)) & AND_VALUES[8 - extraBitCount]);
 
-                    writeBytes[i] = (byte) ((extraBits << (8 - extraBitCount))
+                    bufferArray[i] = (byte) ((extraBits << (8 - extraBitCount))
                             | orValue);
 
                     // subtract 8 from leading bits
@@ -458,7 +457,7 @@ public abstract class AbstractWriter implements IWritable {
             }
 
             // write the bytes
-            appendBytes(writeBytes, 0, writeBytes.length, true);
+            appendBytes(bufferArray, 0, bytesToWrite, true);
 
             // deal with extra bits for later
             if (bitsToWrite > 0 && leadingBits != 0) {
@@ -511,7 +510,7 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeDouble(double value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.rewind();
         buffer.putDouble(value);
         appendBytes(buffer.array(), 0, 8);
     }
@@ -524,7 +523,7 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeLong(long value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.rewind();
         buffer.putLong(value);
         appendBytes(buffer.array(), 0, 8);
     }
@@ -537,7 +536,7 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeFloat(float value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putFloat(value);
         appendBytes(buffer.array(), 0, 4);
     }
@@ -550,7 +549,7 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeInt(int value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putInt(value);
         appendBytes(buffer.array(), 0, 4);
     }
@@ -563,9 +562,16 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeIntAsTwentyFourBit(int value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
+        buffer.rewind();
         buffer.putInt(value);
-        appendBytes(buffer.array(), (littleEndian) ? 0 : 1, 3);
+        twentyFourBitShift();
+        appendBytes(buffer.array(), 0, 3);
+    }
+    
+    private void twentyFourBitShift() {
+        for (int i = 0; i < 3; i++) {
+            bufferArray[i] = bufferArray[i + 1];
+        }
     }
 
     /**
@@ -576,7 +582,7 @@ public abstract class AbstractWriter implements IWritable {
      */
     @Override
     public void writeShort(short value) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(2);
+        buffer.rewind();
         buffer.putShort(value);
         appendBytes(buffer.array(), 0, 2);
     }
@@ -664,7 +670,7 @@ public abstract class AbstractWriter implements IWritable {
         if (littleEndian) {
 
             // reverse the order of bytes
-            bytesToAppend = reverseEndian(bytesToAppend);
+            reverseEndian(bytesToAppend, length);
         }
 
         // adjust file position
@@ -674,7 +680,7 @@ public abstract class AbstractWriter implements IWritable {
         if (!ignoreOffset && leadingBits != 0) {
 
             // bitshift bytes and add leadingBits
-            for (int i = 0; i < bytesToAppend.length; i++) {
+            for (int i = 0; i < length; i++) {
 
                 // bit shift a byte
                 bytesToAppend[i] = manageBitOffset(bytesToAppend[i],
@@ -764,7 +770,7 @@ public abstract class AbstractWriter implements IWritable {
                     = (byte) (value & AND_VALUES[bitCount]);
 
             // bit shift right
-            value = (byte) ((int) value >>> bitCount);
+            value = (byte) ((int) (value & 0xff) >>> bitCount);
 
             // set extra bit count
             extraBitCount = bitCount;

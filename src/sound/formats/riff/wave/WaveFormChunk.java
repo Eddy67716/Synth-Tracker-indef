@@ -11,6 +11,7 @@ import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import module.ISampleParseable;
 import sound.formats.AudioSampleData;
 import sound.formats.riff.InfoList;
 import static sound.formats.riff.RiffChunk.S_GROUP_ID_LENGTH;
@@ -26,7 +27,6 @@ import sound.formats.riff.UnknownRiffChunk;
 public class WaveFormChunk extends RiffForm {
     
     // constants
-    public static final String S_GROUP_ID = "RIFF"; // RIFF
     public static final String S_RIFF_TYPE = "WAVE"; // WAVE
     
     // instance variables
@@ -36,7 +36,7 @@ public class WaveFormChunk extends RiffForm {
 
     public WaveFormChunk(int channels, long sampleRate, int bitsPerSample,
             double[][] sampleData, boolean floatingPoint) {
-        super(S_GROUP_ID, S_RIFF_TYPE);
+        super(S_RIFF_TYPE);
         waveFormat = new WaveFormatChunk(channels, sampleRate, bitsPerSample,
                 floatingPoint, sampleData);
         waveData = new WaveDataChunk(waveFormat, sampleData);
@@ -52,7 +52,7 @@ public class WaveFormChunk extends RiffForm {
     }
     
     public WaveFormChunk(long sampleRate, AudioSampleData sampleData) {
-        super(S_GROUP_ID, S_RIFF_TYPE);
+        super(S_RIFF_TYPE);
         waveFormat = new WaveFormatChunk(sampleRate, sampleData);
         waveData = new WaveDataChunk(waveFormat, sampleData);
         if (sampleData.isFloating()) {
@@ -65,8 +65,145 @@ public class WaveFormChunk extends RiffForm {
         }
     }
     
+    public WaveFormChunk(ISampleParseable sample) {
+        super(S_RIFF_TYPE);
+        waveFormat = new WaveFormatChunk(sample.getC5Speed(), 
+                sample.getAudioSampleData());
+        waveData = new WaveDataChunk(waveFormat, sample.getAudioSampleData());
+        
+        if (sample.getAudioSampleData().isFloating()) {
+            setChunkSize(waveFormat.getChunkSize() + waveData
+                    .getChunkSize() + waveFormat.getFactChunk().getChunkSize()
+                    + 34);
+        } else {
+            setChunkSize(waveFormat.getChunkSize() + waveData
+                    .getChunkSize() + 20);
+        }
+        
+        // populate sample chunk
+        if (sample.isLooped() || sample.isSustainLooped() 
+                || sample.getTranspositionNote() != 0) {
+            if (getWaveSample() == null) {
+                this.addChunk(new WaveSampleChunk());
+            }
+            
+            if (sample.getTranspositionNote() != 0) {
+                getWaveSample().setDwMidiUnityNote(sample
+                        .getTranspositionNote());
+            }
+        
+            // loop only
+            if (!sample.isSustainLooped() && sample.isLooped()) {
+                SampleLoop loop = new SampleLoop();
+                
+                // identifier
+                loop.setDwIndentifier(0);
+                
+                // forwards vs ping pong
+                loop.setDwType((sample.isPingPongLooped()) ? 1 : 0);
+                
+                // start
+                loop.setDwStart(sample.getLoopBeginning());
+                
+                // end
+                loop.setDwEnd(sample.getLoopEnd() - 1);
+                
+                // add sample loop
+                getWaveSample().addSampleLoop(loop);
+            }
+            
+            // sustain loop only (should not happen but just in case)
+            if (sample.isSustainLooped() && sample.isLooped()) {
+                
+                // sustain loop
+                SampleLoop susLoop = new SampleLoop();
+                
+                // identifier
+                susLoop.setDwIndentifier(0);
+                
+                // forwards vs ping pong
+                susLoop.setDwType((sample.isPingPongSustainLooped()) ? 1 : 0);
+                
+                // start
+                susLoop.setDwStart(sample.getSustainLoopBeginning());
+                
+                // end
+                susLoop.setDwEnd(sample.getSustainLoopEnd() - 1);
+                
+                // add sample loop
+                getWaveSample().addSampleLoop(susLoop);
+            }
+            
+            // sustain loop and loop
+            if (sample.isSustainLooped() && sample.isLooped()) {
+                
+                // sustain loop
+                SampleLoop susLoop = new SampleLoop();
+                
+                // identifier
+                susLoop.setDwIndentifier(0);
+                
+                // forwards vs ping pong
+                susLoop.setDwType((sample.isPingPongSustainLooped()) ? 1 : 0);
+                
+                // start
+                susLoop.setDwStart(sample.getSustainLoopBeginning());
+                
+                // end
+                susLoop.setDwEnd(sample.getSustainLoopEnd() - 1);
+                
+                // add sample loop
+                getWaveSample().addSampleLoop(susLoop);
+                
+                // loop
+                SampleLoop loop = new SampleLoop();
+                
+                // identifier
+                loop.setDwIndentifier(1);
+                
+                // forwards vs ping pong
+                loop.setDwType((sample.isPingPongLooped()) ? 1 : 0);
+                
+                // start
+                loop.setDwStart(sample.getLoopBeginning());
+                
+                // end
+                loop.setDwEnd(sample.getLoopEnd() - 1);
+                
+                // add sample loop
+                getWaveSample().addSampleLoop(loop);
+            }
+        }
+        
+        // populate instrument chunk
+        if (sample.getTranspositionNote() != 0 || sample.getEndingNote() != 0
+                || sample.getEndingVelocity() != 0) {
+            if (getWaveInstrument() == null) {
+                this.addChunk(new WaveInstrument());
+            }
+            getWaveInstrument()
+                    .setbUnshiftedNote(sample.getTranspositionNote());
+            getWaveInstrument()
+                    .setbLowNote(sample.getStartingNote());
+            getWaveInstrument()
+                    .setbHighNote(sample.getEndingNote());
+            getWaveInstrument()
+                    .setbLowVelocity(sample.getStartingVelocity());
+            getWaveInstrument()
+                    .setbHighVelocity(sample.getEndingVelocity());
+        }
+        
+        // finish off chunk size
+        long chunkSize = getChunkSize();
+        for (RiffChunk chunk : otherChunks) {
+            chunkSize += chunk.getChunkSize();
+        }
+        
+        setChunkSize(chunkSize);
+    }
+    
     public WaveFormChunk() {
-        super(S_GROUP_ID, S_RIFF_TYPE);
+        super(S_RIFF_TYPE);
         waveFormat = new WaveFormatChunk();
     }
     

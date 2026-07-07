@@ -12,21 +12,11 @@ import module.IPattern;
 import module.it.format.ItSampleHeader;
 import ui.view.ProgressionBar;
 import ui.workers.LoadModuleSwingWorker;
-import java.awt.EventQueue;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import module.IModuleHeader;
@@ -101,7 +91,6 @@ public class LoadViewModel {
         switch (fileExtensionType) {
             case "it":
                 openedFiles.add(fileChooser.getSelectedFile());
-                this.
                 modFile = new ItFile(fileChooser.getSelectedFile().getPath());
                 break;
             default:

@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import lang.LanguageHandler;
 import static ui.UIProperties.BOLD_FONT;
 import static ui.UIProperties.DEF_INSETS;
 
@@ -21,9 +22,10 @@ import static ui.UIProperties.DEF_INSETS;
  * @author eddy6
  */
 public class FindVolume extends JPanel {
-    
+
     // instance variables
     private int modType;
+    private LanguageHandler languageHandler;
     private Border findVolumeBorder;
     private GridBagLayout findVolumeLayout;
     private GridBagConstraints fvc;
@@ -31,12 +33,13 @@ public class FindVolume extends JPanel {
     private JComboBox volumeEffectsList;
     private JLabel volumeValueLabel;
     private JSpinner volumeValueSpinner;
-    
-    public FindVolume(int modType) {
+
+    public FindVolume(int modType, LanguageHandler languageHandler) {
         this.modType = modType;
+        this.languageHandler = languageHandler;
         init();
     }
-    
+
     // getters
     public JComboBox getVolumeEffectsList() {
         return volumeEffectsList;
@@ -45,13 +48,13 @@ public class FindVolume extends JPanel {
     public JSpinner getVolumeValueSpinner() {
         return volumeValueSpinner;
     }
-    
+
     public void init() {
-        
+
         // set the layout
         findVolumeLayout = new GridBagLayout();
         setLayout(findVolumeLayout);
-        
+
         // setup the constrants
         fvc = new GridBagConstraints();
         fvc.anchor = GridBagConstraints.SOUTHWEST;
@@ -65,55 +68,58 @@ public class FindVolume extends JPanel {
         // set the border title
         findVolumeBorder
                 = BorderFactory.createTitledBorder(findVolumeBorder,
-                        "Volume: ", 0, 0, BOLD_FONT);
+                        languageHandler.getLanguageText("pattern.find.volume"),
+                        0, 0, BOLD_FONT);
 
         // set options border
         setBorder(findVolumeBorder);
-        
+
         // volume effect label
-        volumeEffectLabel = new JLabel("Volume effect: ");
-        
+        volumeEffectLabel = new JLabel(languageHandler
+                .getLanguageText("pattern.find.volume.effect"));
+
         fvc.gridx = 0;
         fvc.gridwidth = GridBagConstraints.REMAINDER;
         fvc.weightx = 1;
         fvc.gridy = 0;
         fvc.gridheight = 1;
         fvc.weighty = 0;
-        
+
         add(volumeEffectLabel, fvc);
-        
+
         // volume effect combo box
         volumeEffectsList = new JComboBox();
-        
+
         fvc.gridwidth = 1;
         fvc.gridx = 0;
         fvc.gridy++;
-        
+
         add(volumeEffectsList, fvc);
-        
+
         // volume value label
-        volumeValueLabel = new JLabel("Volume effect: ");
-        
+        volumeValueLabel = new JLabel(languageHandler
+                .getLanguageText("pattern.find.volume.effect.value"));
+
         fvc.gridy++;
         fvc.gridheight = 1;
         fvc.weighty = 0;
-        
+
         add(volumeValueLabel, fvc);
-        
+
         // volume value spinner
         volumeValueSpinner = new JSpinner();
-        
+
         fvc.gridwidth = 1;
         fvc.gridy++;
-        
+
         add(volumeValueSpinner, fvc);
-        
+
         // add trailing empty JPanel
         fvc.gridx = 0;
         fvc.gridy++;
         fvc.weighty = 1.0;
         fvc.gridheight = GridBagConstraints.REMAINDER;
-        
+
         add(new JPanel(), fvc);
     }
 }

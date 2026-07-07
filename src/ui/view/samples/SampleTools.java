@@ -5,7 +5,7 @@
  */
 package ui.view.samples;
 
-import ui.controllers.SampleController;
+import ui.controllers.samples.SampleController;
 import ui.UIProperties;
 import static ui.UIProperties.*;
 import java.awt.Component;

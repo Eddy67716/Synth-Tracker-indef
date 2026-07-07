@@ -135,6 +135,7 @@ public class ByteArrayWriter extends AbstractWriter {
         }
     }
     
+    @Override
     protected void writeBytesToFile(byte[] bytesToWrite, int start, int length) 
             throws IOException {
         for (int i = start; i < start + length; i++) {

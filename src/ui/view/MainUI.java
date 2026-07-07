@@ -17,7 +17,7 @@ import javax.swing.JToolBar;
 import javax.swing.JToolBar.Separator;
 import javax.swing.UIManager;
 import lang.LanguageHandler;
-import static ui.UIProperties.DEF_BACKGROUND_COLOUR;
+import settings.format.SettingsData;
 import static ui.UIProperties.DEF_INSETS;
 
 /**

@@ -19,49 +19,17 @@ public class IOMethods {
      * Reverses the byte order of an array of bytes for converting big to little
      * endian or vice versa
      * 
-     * @param oldArray The array of bytes to reverse
-     * @return The reversed array of bytes
+     * @param array The array of bytes to reverse
+     * @param length length of array area to be flipped
      */
-    public static byte[] reverseEndian(byte[] oldArray) {
-
-        // new array
-        byte[] newArray = new byte[oldArray.length];
+    public static void reverseEndian(byte[] array, int length) {
 
         // reverse the order of byes
-        for (int i = 0, j = oldArray.length - 1; i < oldArray.length; i++, j--) {
-            newArray[i] = oldArray[j];
+        for (int i = 0, j = length - 1; i < length / 2; i++, j--) {
+            byte value = array[j];
+            array[j] = array[i];
+            array[i] = value;
         }
-
-        // return the new bytes
-        return newArray;
-    }
-    
-    /**
-     * Set string to a specified length, adds " " if it is smaller than length
-     * 
-     * @param oldString The string to change length of
-     * @param length The length to enlarge or cut down to
-     * @return The new string with the specified length
-     */
-    public static String setStringToLength(String oldString, int length) {
-        String newString;
-        
-        if (oldString.length() > length) {
-            newString = oldString.substring(0, length);
-        } else if (oldString.length() < length) {
-            StringBuilder sb = new StringBuilder(oldString);
-            
-            while (sb.length() < length) {
-                sb.append(" ");
-            }
-            
-            return sb.toString();
-            
-        } else {
-            newString = oldString;
-        }
-        
-        return newString;
     }
     
     /**
@@ -71,7 +39,7 @@ public class IOMethods {
      * @param length The length to enlarge or cut down to
      * @return The new string with the specified length
      */
-    public static String setStringToNullLength(String oldString, int length) {
+    public static String setStringToLength(String oldString, int length) {
         String newString;
         
         if (oldString.length() > length) {

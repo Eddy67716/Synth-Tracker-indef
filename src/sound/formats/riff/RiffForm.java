@@ -16,11 +16,14 @@ import static sound.formats.riff.RiffChunk.S_GROUP_ID_LENGTH;
  */
 public abstract class RiffForm extends RiffChunk {
     
+    // riff group id
+    public static final String S_GROUP_ID = "RIFF"; // RIFF
+    
     // instance variable
     private String sRiffType;
     
-    public RiffForm(String sGroupID, String sRiffType) {
-        super(sGroupID);
+    public RiffForm(String sRiffType) {
+        super(S_GROUP_ID);
         this.sRiffType = sRiffType;
     }
     

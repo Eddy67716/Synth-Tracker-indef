@@ -4,8 +4,6 @@
  */
 package module;
 
-import sound.sample.player.IToneAssignable;
-
 /**
  *
  * @author eddy6

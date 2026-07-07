@@ -15,7 +15,7 @@ import module.it.effects.ItNoteRange;
 import static module.it.effects.ItEffectValues.decodeEffectByte;
 import static module.it.effects.ItEffectValues.decodeVolumeByte;
 import music.note.NoteRange;
-import static ui.UIProperties.DEF_TABLE_BACKGROUND_COLOUR;
+import ui.UIProperties;
 
 /**
  *
@@ -34,7 +34,7 @@ public class PatternCell extends JPanel implements TableCellRenderer {
     // constructor
     public PatternCell(int modType) {
         this.modType = modType;
-        setBackground(DEF_TABLE_BACKGROUND_COLOUR);
+        setBackground(UIProperties.getTableBackgroundColour());
         noteRange = new ItNoteRange();
         switch (modType) {
             case 1:
@@ -69,7 +69,7 @@ public class PatternCell extends JPanel implements TableCellRenderer {
         for (int i = 0; i < cellSections.length; i++) {
             cellSections[i] = new JLabel();
             cellSections[i].setFont(new Font("Courier", Font.PLAIN, 20));
-            cellSections[i].setBackground(DEF_TABLE_BACKGROUND_COLOUR);
+            cellSections[i].setBackground(UIProperties.getTableBackgroundColour());
             add(cellSections[i]);
         }
     }

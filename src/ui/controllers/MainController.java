@@ -4,6 +4,9 @@
  */
 package ui.controllers;
 
+import ui.controllers.instruments.InstrumentController;
+import ui.controllers.module.ModuleController;
+import ui.controllers.samples.SampleController;
 import ui.view.MainMenuBar;
 import ui.view.MainUI;
 import ui.view.samples.SampleUI;
@@ -14,6 +17,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,18 +33,23 @@ import javax.swing.SwingUtilities;
 import lang.LanguageHandler;
 import module.IInstrument;
 import module.IPattern;
-import ui.view.SettingsUI;
-import ui.view.details.DetailsUI;
+import ui.view.settings.SettingsUI;
+import ui.view.module.DetailsUI;
 import ui.view.instruments.InstrumentUI;
 import ui.view.models.ControllerViewModel;
 import ui.view.pattens.PatternUI;
 import module.ISampleSynth;
+import settings.format.SettingsData;
+import ui.UIProperties;
 
 /**
  *
  * @author Edward Jenkins
  */
 public class MainController implements IUndoable {
+    
+    // constants
+    public static final SettingsData SETTINGS_DATA = new SettingsData();
 
     // instance variables
     private LanguageHandler languageHandler;
@@ -178,7 +188,7 @@ public class MainController implements IUndoable {
                 loadVM.getModuleFile().getModTypeID(), languageHandler);
         
         // details controller
-        DetailsController detailsController = new DetailsController(detailsUI,
+        ModuleController detailsController = new ModuleController(detailsUI,
             loadVM);
         
         // add details controller to view model
@@ -224,7 +234,8 @@ public class MainController implements IUndoable {
 
         // instrumentController
         InstrumentController instrumentController
-                = new InstrumentController(instrumentUI, loadVM);
+                = new InstrumentController(instrumentUI, loadVM, 
+                        languageHandler);
 
         // add instrument controller to view model
         tabControllerViewModel

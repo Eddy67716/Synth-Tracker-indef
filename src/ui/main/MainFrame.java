@@ -7,20 +7,15 @@ package ui.main;
 import ui.controllers.MainController;
 import ui.view.MainMenuBar;
 import ui.view.MainUI;
-import ui.view.samples.SampleUI;
 import java.awt.Dimension;
+import java.io.IOException;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import lang.LanguageHandler;
 import ui.UIProperties;
-import static ui.UIProperties.*;
+import static ui.controllers.MainController.SETTINGS_DATA;
 import ui.custom.SynthCustomMetalTheme;
 
 /**
@@ -53,11 +48,23 @@ public class MainFrame extends JFrame {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
-        MetalLookAndFeel.setCurrentTheme(new SynthCustomMetalTheme());
-
+        
+        try {
+            SETTINGS_DATA.read();
+        } catch (IOException | IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            try {
+                SETTINGS_DATA.write();
+            } catch (IOException e2) {
+                
+            }
+        }
+        
         // set ui properties
         UIProperties.setUIProperties();
+
+        // set look and feel
+        MetalLookAndFeel.setCurrentTheme(new SynthCustomMetalTheme());
 
         // run the frame
         SwingUtilities.invokeLater(() -> {

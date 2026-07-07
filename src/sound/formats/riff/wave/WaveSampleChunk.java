@@ -17,13 +17,14 @@ import java.io.IOException;
 public class WaveSampleChunk extends RiffChunk {
     
     // constants
+    public static final byte KNOWN_LENGTH = 36;
     public static final String S_GROUP_ID = "smpl";
-    
+
     // instance variables
     private long dwManufacturer;
     private long dwProduct;
     private long dwSamplePeriod;
-    private long dwMidiUnityNote;
+    private long dwMidiUnityNote = -1;
     private long dwMidiPitchFraction;
     private long dwSMPTEFormat;
     private long dwSMPTEOffset;
@@ -33,8 +34,9 @@ public class WaveSampleChunk extends RiffChunk {
 
     public WaveSampleChunk() {
         super(S_GROUP_ID);
+        setChunkSize(KNOWN_LENGTH);
     }
-    
+
     public WaveSampleChunk(boolean headerRead) {
         super(headerRead);
     }
@@ -117,86 +119,114 @@ public class WaveSampleChunk extends RiffChunk {
         this.cbSamplerData = cbSamplerData;
     }
 
+    public void addSampleLoop(SampleLoop sampleLoop) {
+
+        if (sampleLoops != null) {
+
+            SampleLoop[] newSampleLoops
+                    = new SampleLoop[sampleLoops.length + 1];
+
+            System.arraycopy(sampleLoop, 0, newSampleLoops, 0,
+                    sampleLoops.length);
+
+            newSampleLoops[newSampleLoops.length - 1] = sampleLoop;
+
+            sampleLoops = newSampleLoops;
+
+        } else {
+            sampleLoops = new SampleLoop[1];
+
+            sampleLoops[0] = sampleLoop;
+        }
+
+        cSampleLoops++;
+
+        setChunkSize(KNOWN_LENGTH + sampleLoops.length
+                * SampleLoop.LENGTH);
+    }
+
     @Override
     public boolean read(IReadable r) throws IOException, FileNotFoundException, IllegalArgumentException {
         boolean read = super.read(r);
-        
+
         // read manufacturer
         dwManufacturer = r.getUIntAsLong();
-        
+
         // read product
         dwProduct = r.getUIntAsLong();
-        
+
         // read sample period
         dwSamplePeriod = r.getUIntAsLong();
-        
+
         // read MIDI unity note
         dwMidiUnityNote = r.getUIntAsLong();
-        
+
         // read MIDI pitch fraction
         dwMidiPitchFraction = r.getUIntAsLong();
-        
+
         // read SMPTE format
         dwSMPTEFormat = r.getUIntAsLong();
-        
+
         // read SMPTE offset
         dwSMPTEOffset = r.getUIntAsLong();
-        
+
         // read sample loop count
         cSampleLoops = r.getUIntAsLong();
-        
+
         // read sample data
         cbSamplerData = r.getUIntAsLong();
-        
+
         // read sample loops
-        sampleLoops = new SampleLoop[(int)cSampleLoops];
-        
+        sampleLoops = new SampleLoop[(int) cSampleLoops];
+
         for (int i = 0; i < sampleLoops.length; i++) {
             sampleLoops[i] = new SampleLoop();
             sampleLoops[i].read(r);
         }
-        
+
         setFullyRead(read);
-        
+
         return read;
     }
 
     @Override
     public boolean write(IWritable w) throws IOException {
-        boolean written =  super.write(w); 
-        
+        boolean written = super.write(w);
+
         // write manufacturer
-        w.writeInt((int)dwManufacturer);
-        
+        w.writeInt((int) dwManufacturer);
+
         // write product
-        w.writeInt((int)dwProduct);
-        
+        w.writeInt((int) dwProduct);
+
         // write sample period
-        w.writeInt((int)dwSamplePeriod);
-        
+        w.writeInt((int) dwSamplePeriod);
+
         // write MIDI unity note
-        w.writeInt((int)dwMidiUnityNote);
-        
+        w.writeInt((int) dwMidiUnityNote);
+
         // write MIDI pitch fraction
-        w.writeInt((int)dwMidiPitchFraction);
-        
+        w.writeInt((int) dwMidiPitchFraction);
+
         // write SMPTE format
-        w.writeInt((int)dwSMPTEFormat);
-        
+        w.writeInt((int) dwSMPTEFormat);
+
         // write SMPTE offset
-        w.writeInt((int)dwSMPTEOffset);
-        
+        w.writeInt((int) dwSMPTEOffset);
+
         // write sample loop count
-        w.writeInt((int)cSampleLoops);
-        
+        w.writeInt((int) cSampleLoops);
+
         // write sample data
-        w.writeInt((int)cbSamplerData);
-        
+        w.writeInt((int) cbSamplerData);
+
         // write sample loops
-        for (SampleLoop loop : sampleLoops) {
-            loop.write(w);
+        if (sampleLoops != null) {
+            for (SampleLoop loop : sampleLoops) {
+                loop.write(w);
+            }
         }
-        
+
         return written;
     }
 }

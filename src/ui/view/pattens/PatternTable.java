@@ -20,7 +20,7 @@ public class PatternTable extends JTable {
     
     // instance variables
     private int modID;
-    private PatternCellEditor patternCellEditor;
+    private PatternCellView patternCellEditor;
 
     // constructor
     public PatternTable(int modType, String[] channelNames, 
@@ -51,7 +51,7 @@ public class PatternTable extends JTable {
         return modID;
     }
 
-    public PatternCellEditor getPatternCellEditor() {
+    public PatternCellView getPatternCellEditor() {
         return patternCellEditor;
     }
     

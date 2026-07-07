@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
+import lang.LanguageHandler;
 import static ui.UIProperties.DEF_INSETS;
 
 /**
@@ -22,6 +23,7 @@ public class FindPanel extends JPanel {
     
     // instance variables
     private int modType;
+    private LanguageHandler languageHandler;
     private GridBagConstraints fpc;
     // note
     private FindNote findNote;
@@ -35,8 +37,9 @@ public class FindPanel extends JPanel {
     private FindEffect findEffect2;
     
     // constructor
-    public FindPanel(byte modType) {
+    public FindPanel(byte modType, LanguageHandler languageHandler) {
         this.modType = modType;
+        this.languageHandler = languageHandler;
         init();
     }
     
@@ -65,9 +68,10 @@ public class FindPanel extends JPanel {
         this.setLayout(new GridBagLayout());
         fpc = new GridBagConstraints();
         fpc.anchor = GridBagConstraints.NORTHWEST;
+        fpc.fill = GridBagConstraints.BOTH;  
         
         // find note
-        findNote = new FindNote(this.modType);
+        findNote = new FindNote(modType, languageHandler);
         
         fpc.weightx = 1;
         fpc.weighty = 0;
@@ -79,21 +83,21 @@ public class FindPanel extends JPanel {
         add(findNote, fpc);
         
         // find instrument
-        findInstrument = new FindInstrument(modType);
+        findInstrument = new FindInstrument(modType, languageHandler);
         
         fpc.gridy++;
         
         add(findInstrument, fpc);
         
         // find volume effect
-        findVolume = new FindVolume(modType);
+        findVolume = new FindVolume(modType, languageHandler);
         
         fpc.gridy++;
         
         add(findVolume, fpc);
         
         // find effect 1
-        findEffect1 = new FindEffect(modType);
+        findEffect1 = new FindEffect(modType, languageHandler);
         
         fpc.gridy++;
         fpc.weighty = 1;

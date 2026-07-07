@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+import lang.LanguageHandler;
 import static ui.UIProperties.BOLD_FONT;
 import static ui.UIProperties.DEF_INSETS;
 
@@ -25,6 +26,7 @@ public class FindNote extends JPanel {
     
     // instance variables
     private int modType;
+    private LanguageHandler languageHandler;
     private Border findNoteBorder;
     private GridBagLayout findNoteLayout;
     private GridBagConstraints fnc;
@@ -38,8 +40,9 @@ public class FindNote extends JPanel {
     private JComboBox secondNoteComboBox;
     
     // constructor
-    public FindNote(int modType) {
+    public FindNote(int modType, LanguageHandler languageHandler) {
         this.modType = modType;
+        this.languageHandler = languageHandler;
         init();
     }
     
@@ -78,13 +81,15 @@ public class FindNote extends JPanel {
         // set the border title
         findNoteBorder
                 = BorderFactory.createTitledBorder(findNoteBorder,
-                        "Note: ", 0, 0, BOLD_FONT);
+                        languageHandler.getLanguageText("pattern.find.note"), 
+                        0, 0, BOLD_FONT);
 
         // set options border
         setBorder(findNoteBorder);
         
         // note selection type label
-        noteSelectionTypeLabel = new JLabel("Note selection type: ");
+        noteSelectionTypeLabel = new JLabel(languageHandler
+                .getLanguageText("pattern.find.note.selection"));
         
         fnc.gridx = 0;
         fnc.gridwidth = GridBagConstraints.REMAINDER;
@@ -96,7 +101,8 @@ public class FindNote extends JPanel {
         add(noteSelectionTypeLabel, fnc);
         
         // single note radio button
-        singleNoteRadioButton = new JRadioButton("Single");
+        singleNoteRadioButton = new JRadioButton(languageHandler
+                .getLanguageText("pattern.find.selection.single"));
         
         fnc.gridy++;
         fnc.gridwidth = 1;
@@ -104,7 +110,8 @@ public class FindNote extends JPanel {
         add(singleNoteRadioButton, fnc);
         
         // note range radio button
-        noteRangeRadioButton = new JRadioButton("Range");
+        noteRangeRadioButton = new JRadioButton(languageHandler
+                .getLanguageText("pattern.find.selection.range"));
         
         fnc.gridx++;
         fnc.gridwidth = GridBagConstraints.REMAINDER;
@@ -117,7 +124,8 @@ public class FindNote extends JPanel {
         findNoteGroup.add(noteRangeRadioButton);
         
         // first note label
-        firstNoteLabel = new JLabel("First note: ");
+        firstNoteLabel = new JLabel(languageHandler
+                .getLanguageText("pattern.find.note.first"));
         
         fnc.gridx = 0;
         fnc.gridwidth = 1;
@@ -127,7 +135,8 @@ public class FindNote extends JPanel {
         add(firstNoteLabel, fnc);
         
         // second note label
-        secondNoteLabel = new JLabel("Second note: ");
+        secondNoteLabel = new JLabel(languageHandler
+                .getLanguageText("pattern.find.note.second"));
         
         fnc.gridx = 1;
         fnc.gridwidth = GridBagConstraints.REMAINDER;

@@ -32,7 +32,7 @@ public class NoteMapView extends JPanel {
     public static final byte STR_NOTE_COUNT = 121;
     public static final byte XM_NOTE_COUNT = 96;
     public static final String[] COLUMNS = {
-        "Note", "Sample", "Sample note"
+        "Note", "Transposition", "Sample"
     };
 
     // instance variables

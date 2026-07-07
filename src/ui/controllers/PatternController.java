@@ -10,7 +10,7 @@ import module.IChannel;
 import module.IPattern;
 import ui.view.models.EditPatternViewModel;
 import ui.view.models.LoadViewModel;
-import ui.view.pattens.PatternCellEditor;
+import ui.view.pattens.PatternCellView;
 import ui.view.pattens.PatternTable;
 import ui.view.pattens.PatternUI;
 
@@ -26,7 +26,7 @@ public class PatternController extends GenericController {
     private LoadViewModel loadVM;
     private String[] columnHeader;
     private IPattern selectedPattern;
-    private PatternCellEditor patternCellEditor;
+    private PatternCellView patternCellEditor;
     private CellController cellController;
     private UndoManager[] patternManagers;
     
@@ -34,7 +34,7 @@ public class PatternController extends GenericController {
         this.patternUI = patternUI;
         this.loadVM = loadVM;
         selectedPattern = loadVM.getPatterns().get(0);
-        patternCellEditor = new PatternCellEditor(loadVM.getModID(), 
+        patternCellEditor = new PatternCellView(loadVM.getModID(), 
                 (short) loadVM.getInstruments().size());
         patternCellEditor.setHilightValues(loadVM.getHeader().getPatternHilight());
         cellController = new CellController(patternCellEditor);

@@ -245,7 +245,7 @@ public class PatternUI extends JPanel {
         orderView = new OrderView(modType, orders);
         
         // scroll pane with pattern orders
-        orderPane = new JScrollPane(orderView, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+        orderPane = new JScrollPane(orderView, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, 
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         orderPane.setMinimumSize(new Dimension(100, 20));
         
